@@ -1,91 +1,85 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { CredibilityScore } from "./CredibilityScore";
 import { ClaimCard } from "./ClaimCard";
 import { BiasHighlight } from "./BiasHighlight";
 import { ArticleCard } from "./ArticleCard";
 import { ModeToggle } from "./ModeToggle";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Download, Share2 } from "lucide-react";
+import { ArrowLeft, Download, Share2, Loader2, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { AnalysisResult, ArticleData, analyzeArticle } from "@/lib/api/analysis";
+import { saveAnalyzedArticle, recordPublisherTrend, getPublisherArticles, Article } from "@/lib/api/publishers";
+import { useToast } from "@/components/ui/use-toast";
 
 interface AnalysisViewProps {
+  article: ArticleData;
+  initialAnalysis: AnalysisResult;
   onBack: () => void;
   className?: string;
 }
 
-// Mock data for demonstration
-const mockAnalysis = {
-  title: "Climate Change Report Shows Accelerating Ice Melt",
-  publisher: "Global News Network",
-  credibilityScore: 72,
-  claims: [
-    {
-      claim: "Arctic ice has decreased by 40% since 1979",
-      status: "verified" as const,
-      explanation: "Multiple peer-reviewed studies confirm this figure, including NASA satellite data and NSIDC records.",
-      sources: ["https://nasa.gov/arctic", "https://nsidc.org/data"],
-      confidence: 94,
-    },
-    {
-      claim: "Sea levels will rise by 3 meters by 2050",
-      status: "partial" as const,
-      explanation: "While sea level rise is documented, the 3-meter figure by 2050 represents an extreme scenario. IPCC projections range from 0.3 to 1.1 meters by 2100.",
-      sources: ["https://ipcc.ch/reports"],
-      confidence: 78,
-    },
-    {
-      claim: "No major economies are meeting their Paris Agreement targets",
-      status: "false" as const,
-      explanation: "Several nations, including the UK and some EU members, are on track to meet their 2030 commitments according to Climate Action Tracker.",
-      sources: ["https://climateactiontracker.org"],
-      confidence: 89,
-    },
-  ],
-  biases: [
-    {
-      text: "scientists warn of catastrophic consequences",
-      biasType: "language" as const,
-      whyBiased: "The word 'catastrophic' is emotionally charged and may overstate the scientific consensus, which typically uses more measured language like 'severe' or 'significant'.",
-      whyNotBiased: "Given the documented impacts on ecosystems and human populations, 'catastrophic' may be an accurate characterization of worst-case scenarios.",
-      severity: "medium" as const,
-      confidence: 72,
-    },
-    {
-      text: "Climate skeptics continue to deny the evidence",
-      biasType: "framing" as const,
-      whyBiased: "The term 'deny' has negative connotations and doesn't distinguish between different types of skepticism (scientific methodology, policy responses, etc.).",
-      whyNotBiased: "The term accurately describes the rejection of well-established scientific evidence by certain groups.",
-      severity: "low" as const,
-      confidence: 65,
-    },
-  ],
-  relatedArticles: [
-    {
-      headline: "IPCC Report: What the Data Actually Shows",
-      publisher: "Science Daily",
-      summary: "An objective breakdown of the latest IPCC findings without editorial interpretation.",
-      credibilityScore: 89,
-      framingLabel: "Neutral",
-    },
-    {
-      headline: "The Real Cost of Climate Action",
-      publisher: "Economic Review",
-      summary: "Analysis focuses on economic impacts of climate policies rather than environmental benefits.",
-      credibilityScore: 68,
-      framingLabel: "Economic Focus",
-    },
-    {
-      headline: "Why Climate Alarmism Hurts the Cause",
-      publisher: "Policy Forum",
-      summary: "Opinion piece arguing that extreme predictions undermine public trust in climate science.",
-      credibilityScore: 54,
-      framingLabel: "Contrarian",
-    },
-  ],
-};
-
-export function AnalysisView({ onBack, className }: AnalysisViewProps) {
+export function AnalysisView({ article, initialAnalysis, onBack, className }: AnalysisViewProps) {
   const [mode, setMode] = useState<"basic" | "expert">("basic");
+  const [analysis, setAnalysis] = useState<AnalysisResult>(initialAnalysis);
+  const [isReanalyzing, setIsReanalyzing] = useState(false);
+  const [relatedArticles, setRelatedArticles] = useState<Article[]>([]);
+  const { toast } = useToast();
+
+  // Save article and record trend on mount
+  useEffect(() => {
+    const saveAndTrack = async () => {
+      const saved = await saveAnalyzedArticle({
+        url: article.url,
+        title: article.title,
+        publisher: article.publisher,
+        content: article.content,
+        credibility_score: analysis.credibilityScore,
+        analysis_data: analysis as unknown as Record<string, unknown>,
+      });
+
+      if (saved) {
+        // Record publisher trend
+        const biasSummary = {
+          totalBiases: analysis.biases.length,
+          biasTypes: analysis.biases.map(b => b.biasType),
+        };
+        await recordPublisherTrend(article.publisher, saved.id, analysis.credibilityScore, biasSummary);
+      }
+
+      // Fetch related articles from same publisher
+      const related = await getPublisherArticles(article.publisher);
+      setRelatedArticles(related.slice(0, 5));
+    };
+
+    saveAndTrack();
+  }, [article, analysis]);
+
+  const handleModeChange = async (newMode: "basic" | "expert") => {
+    if (newMode === mode) return;
+    
+    setMode(newMode);
+    
+    if (newMode === "expert" && mode === "basic") {
+      // Re-run analysis in expert mode
+      setIsReanalyzing(true);
+      try {
+        const result = await analyzeArticle(article.content, article.title, article.publisher, "expert");
+        if (result.success && result.data) {
+          setAnalysis(result.data);
+        } else {
+          toast({
+            title: "Analysis failed",
+            description: result.error || "Could not re-analyze in expert mode",
+            variant: "destructive",
+          });
+        }
+      } catch (error) {
+        console.error("Expert mode analysis failed:", error);
+      } finally {
+        setIsReanalyzing(false);
+      }
+    }
+  };
 
   return (
     <div className={cn("min-h-screen bg-background", className)}>
@@ -98,7 +92,8 @@ export function AnalysisView({ onBack, className }: AnalysisViewProps) {
           </Button>
           
           <div className="flex items-center gap-3">
-            <ModeToggle mode={mode} onChange={setMode} />
+            <ModeToggle mode={mode} onChange={handleModeChange} />
+            {isReanalyzing && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
             <div className="hidden sm:flex items-center gap-2">
               <Button variant="outline" size="sm" className="gap-2">
                 <Share2 className="h-4 w-4" />
@@ -121,85 +116,144 @@ export function AnalysisView({ onBack, className }: AnalysisViewProps) {
             <header className="space-y-4 animate-fade-in">
               <div className="flex items-center gap-2">
                 <span className="text-small font-medium text-muted-foreground uppercase tracking-wide">
-                  {mockAnalysis.publisher}
+                  {article.publisher}
                 </span>
               </div>
               <h1 className="text-headline text-foreground">
-                {mockAnalysis.title}
+                {article.title}
               </h1>
+              {article.url && (
+                <a 
+                  href={article.url} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-caption text-primary hover:underline"
+                >
+                  View original article →
+                </a>
+              )}
             </header>
+
+            {/* Summary */}
+            {analysis.summary && (
+              <div className="p-4 rounded-lg bg-accent border border-border animate-fade-in">
+                <p className="text-body text-foreground">{analysis.summary}</p>
+              </div>
+            )}
 
             {/* Credibility score card */}
             <div className="p-6 rounded-xl bg-card border border-border animate-slide-up">
-              <div className="flex items-start justify-between gap-6">
+              <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
                 <div className="flex-1">
                   <h2 className="text-title text-foreground mb-1">Credibility Score</h2>
                   <p className="text-caption text-muted-foreground mb-4">
                     Based on factual accuracy, source reliability, and bias analysis
                   </p>
-                  <CredibilityScore score={mockAnalysis.credibilityScore} size="lg" />
+                  <CredibilityScore score={analysis.credibilityScore} size="lg" />
                 </div>
+                
+                {analysis.scoreBreakdown && (
+                  <div className="grid grid-cols-2 gap-4 text-caption">
+                    <div>
+                      <span className="text-muted-foreground">Factual Accuracy</span>
+                      <p className="font-medium">{analysis.scoreBreakdown.factualAccuracy}%</p>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Source Reliability</span>
+                      <p className="font-medium">{analysis.scoreBreakdown.sourceReliability}%</p>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Bias Level</span>
+                      <p className="font-medium">{analysis.scoreBreakdown.biasLevel}%</p>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Argument Balance</span>
+                      <p className="font-medium">{analysis.scoreBreakdown.argumentBalance}%</p>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
             {/* Factual Claims */}
-            <section className="space-y-4">
-              <h2 className="text-title text-foreground">Factual Claims</h2>
-              <p className="text-caption text-muted-foreground -mt-2">
-                {mode === "basic" 
-                  ? "Key claims identified and verified against reliable sources"
-                  : "Detailed verification with source analysis and confidence intervals"
-                }
-              </p>
-              <div className="space-y-3">
-                {mockAnalysis.claims.map((claim, i) => (
-                  <ClaimCard 
-                    key={i} 
-                    {...claim} 
-                    className={`stagger-${i + 1}`}
-                  />
-                ))}
-              </div>
-            </section>
+            {analysis.claims.length > 0 && (
+              <section className="space-y-4">
+                <h2 className="text-title text-foreground">Factual Claims ({analysis.claims.length})</h2>
+                <p className="text-caption text-muted-foreground -mt-2">
+                  {mode === "basic" 
+                    ? "Key claims identified and verified against reliable sources"
+                    : "Detailed verification with source analysis and confidence intervals"
+                  }
+                </p>
+                <div className="space-y-3">
+                  {analysis.claims.map((claim, i) => (
+                    <ClaimCard 
+                      key={i} 
+                      claim={claim.claim}
+                      status={claim.status}
+                      explanation={claim.explanation}
+                      confidence={claim.confidence}
+                      className={`stagger-${Math.min(i + 1, 5)}`}
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
 
             {/* Bias Detection */}
-            <section className="space-y-4">
-              <h2 className="text-title text-foreground">Bias Detection</h2>
-              <p className="text-caption text-muted-foreground -mt-2">
-                {mode === "basic"
-                  ? "Language and framing that may indicate bias"
-                  : "Comprehensive linguistic and contextual bias analysis with cultural considerations"
-                }
-              </p>
-              <div className="space-y-3">
-                {mockAnalysis.biases.map((bias, i) => (
-                  <BiasHighlight 
-                    key={i} 
-                    {...bias}
-                    className={`stagger-${i + 1}`}
-                  />
-                ))}
-              </div>
-            </section>
+            {analysis.biases.length > 0 && (
+              <section className="space-y-4">
+                <h2 className="text-title text-foreground">Bias Detection ({analysis.biases.length})</h2>
+                <p className="text-caption text-muted-foreground -mt-2">
+                  {mode === "basic"
+                    ? "Language and framing that may indicate bias"
+                    : "Comprehensive linguistic and contextual bias analysis with cultural considerations"
+                  }
+                </p>
+                <div className="space-y-3">
+                  {analysis.biases.map((bias, i) => (
+                    <BiasHighlight 
+                      key={i} 
+                      text={bias.text}
+                      biasType={bias.biasType}
+                      whyBiased={bias.whyBiased}
+                      whyNotBiased={bias.whyNotBiased}
+                      severity={bias.severity}
+                      confidence={bias.confidence}
+                      className={`stagger-${Math.min(i + 1, 5)}`}
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
 
-            {mode === "expert" && (
+            {/* Argument Analysis - Expert mode */}
+            {mode === "expert" && analysis.arguments && (
               <section className="space-y-4 animate-fade-in">
                 <h2 className="text-title text-foreground">Argument Analysis</h2>
+                
+                {analysis.arguments.thesis && (
+                  <div className="p-4 rounded-lg border border-border bg-card">
+                    <h3 className="text-caption font-medium text-foreground mb-2">Main Thesis</h3>
+                    <p className="text-body text-muted-foreground">{analysis.arguments.thesis}</p>
+                  </div>
+                )}
+
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div className="p-4 rounded-lg border border-border bg-card">
                     <h3 className="text-caption font-medium text-claim-verified mb-2">Supporting Arguments</h3>
                     <ul className="space-y-2 text-caption text-muted-foreground">
-                      <li>• Cites multiple peer-reviewed sources</li>
-                      <li>• Data aligns with IPCC consensus</li>
-                      <li>• Includes counterarguments</li>
+                      {analysis.arguments.supporting.map((arg, i) => (
+                        <li key={i}>• {arg}</li>
+                      ))}
                     </ul>
                   </div>
                   <div className="p-4 rounded-lg border border-border bg-card">
                     <h3 className="text-caption font-medium text-claim-false mb-2">Opposing Arguments</h3>
                     <ul className="space-y-2 text-caption text-muted-foreground">
-                      <li>• Some projections exceed mainstream estimates</li>
-                      <li>• Limited regional context provided</li>
-                      <li>• Economic impacts understated</li>
+                      {analysis.arguments.opposing.map((arg, i) => (
+                        <li key={i}>• {arg}</li>
+                      ))}
                     </ul>
                   </div>
                 </div>
@@ -210,19 +264,38 @@ export function AnalysisView({ onBack, className }: AnalysisViewProps) {
           {/* Sidebar */}
           <aside className="space-y-6">
             <div className="sticky top-36">
-              <h2 className="text-title text-foreground mb-4">Related Coverage</h2>
-              <p className="text-caption text-muted-foreground mb-4">
-                Compare how other sources cover this topic
-              </p>
-              <div className="space-y-4">
-                {mockAnalysis.relatedArticles.map((article, i) => (
-                  <ArticleCard 
-                    key={i} 
-                    {...article}
-                    className={`stagger-${i + 1}`}
-                  />
-                ))}
-              </div>
+              {relatedArticles.length > 0 ? (
+                <>
+                  <div className="flex items-center gap-2 mb-4">
+                    <TrendingUp className="h-4 w-4 text-primary" />
+                    <h2 className="text-title text-foreground">Publisher History</h2>
+                  </div>
+                  <p className="text-caption text-muted-foreground mb-4">
+                    Previous analyses from {article.publisher}
+                  </p>
+                  <div className="space-y-4">
+                    {relatedArticles.map((related, i) => (
+                      <ArticleCard 
+                        key={related.id} 
+                        headline={related.title}
+                        publisher={related.publisher}
+                        summary={`Analyzed ${new Date(related.analyzed_at || related.created_at).toLocaleDateString()}`}
+                        credibilityScore={related.credibility_score || 0}
+                        className={`stagger-${i + 1}`}
+                      />
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <div className="p-6 rounded-xl bg-muted/50 border border-border text-center">
+                  <TrendingUp className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
+                  <h3 className="text-title text-foreground mb-1">First Analysis</h3>
+                  <p className="text-caption text-muted-foreground">
+                    This is the first article analyzed from {article.publisher}. 
+                    Analyze more to build trend data.
+                  </p>
+                </div>
+              )}
             </div>
           </aside>
         </div>
