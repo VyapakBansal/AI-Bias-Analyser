@@ -14,7 +14,117 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      articles: {
+        Row: {
+          analysis_data: Json | null
+          analyzed_at: string | null
+          content: string | null
+          created_at: string
+          credibility_score: number | null
+          id: string
+          publisher: string
+          title: string
+          url: string | null
+        }
+        Insert: {
+          analysis_data?: Json | null
+          analyzed_at?: string | null
+          content?: string | null
+          created_at?: string
+          credibility_score?: number | null
+          id?: string
+          publisher: string
+          title: string
+          url?: string | null
+        }
+        Update: {
+          analysis_data?: Json | null
+          analyzed_at?: string | null
+          content?: string | null
+          created_at?: string
+          credibility_score?: number | null
+          id?: string
+          publisher?: string
+          title?: string
+          url?: string | null
+        }
+        Relationships: []
+      }
+      publisher_trends: {
+        Row: {
+          article_id: string
+          bias_summary: Json | null
+          credibility_score: number
+          id: string
+          publisher_id: string
+          recorded_at: string
+        }
+        Insert: {
+          article_id: string
+          bias_summary?: Json | null
+          credibility_score: number
+          id?: string
+          publisher_id: string
+          recorded_at?: string
+        }
+        Update: {
+          article_id?: string
+          bias_summary?: Json | null
+          credibility_score?: number
+          id?: string
+          publisher_id?: string
+          recorded_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "publisher_trends_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "articles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "publisher_trends_publisher_id_fkey"
+            columns: ["publisher_id"]
+            isOneToOne: false
+            referencedRelation: "tracked_publishers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tracked_publishers: {
+        Row: {
+          avg_credibility_score: number | null
+          created_at: string
+          domain: string | null
+          id: string
+          last_analyzed_at: string | null
+          name: string
+          total_articles_analyzed: number | null
+          updated_at: string
+        }
+        Insert: {
+          avg_credibility_score?: number | null
+          created_at?: string
+          domain?: string | null
+          id?: string
+          last_analyzed_at?: string | null
+          name: string
+          total_articles_analyzed?: number | null
+          updated_at?: string
+        }
+        Update: {
+          avg_credibility_score?: number | null
+          created_at?: string
+          domain?: string | null
+          id?: string
+          last_analyzed_at?: string | null
+          name?: string
+          total_articles_analyzed?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

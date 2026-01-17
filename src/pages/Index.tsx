@@ -2,13 +2,17 @@ import { useState } from "react";
 import { Header } from "@/components/Header";
 import { AnalysisInput } from "@/components/AnalysisInput";
 import { AnalysisView } from "@/components/AnalysisView";
-import { Shield, CheckCircle, BarChart3, Zap } from "lucide-react";
+import { PublisherTrends } from "@/components/PublisherTrends";
+import { Shield, CheckCircle, BarChart3, Zap, TrendingUp } from "lucide-react";
+import { analyzeFromUrl, analyzeFromText, AnalysisResult, ArticleData } from "@/lib/api/analysis";
+import { useToast } from "@/components/ui/use-toast";
+import { Button } from "@/components/ui/button";
 
 const features = [
   {
     icon: CheckCircle,
     title: "Fact Verification",
-    description: "Every claim cross-referenced against reputable sources with transparent sourcing",
+    description: "Every claim cross-referenced with AI-powered analysis and transparent reasoning",
   },
   {
     icon: BarChart3,
@@ -18,27 +22,90 @@ const features = [
   {
     icon: Zap,
     title: "Instant Analysis",
-    description: "Get comprehensive credibility scores in seconds, not hours",
+    description: "Get comprehensive credibility scores in seconds using advanced AI",
   },
 ];
 
+type View = "home" | "analysis" | "trends";
+
 export default function Index() {
-  const [view, setView] = useState<"home" | "analysis">("home");
+  const [view, setView] = useState<View>("home");
   const [isLoading, setIsLoading] = useState(false);
+  const [analysisResult, setAnalysisResult] = useState<{ article: ArticleData; analysis: AnalysisResult } | null>(null);
+  const { toast } = useToast();
 
   const handleAnalyze = async (input: string, type: "url" | "text") => {
     setIsLoading(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    setIsLoading(false);
-    setView("analysis");
+    
+    try {
+      if (type === "url") {
+        const result = await analyzeFromUrl(input);
+        
+        if (result.error) {
+          toast({
+            title: "Analysis failed",
+            description: result.error,
+            variant: "destructive",
+          });
+          setIsLoading(false);
+          return;
+        }
+
+        if (result.article && result.analysis) {
+          setAnalysisResult({ article: result.article, analysis: result.analysis });
+          setView("analysis");
+        }
+      } else {
+        const result = await analyzeFromText(input);
+        
+        if (result.error) {
+          toast({
+            title: "Analysis failed",
+            description: result.error,
+            variant: "destructive",
+          });
+          setIsLoading(false);
+          return;
+        }
+
+        if (result.analysis) {
+          setAnalysisResult({ article: result.article, analysis: result.analysis });
+          setView("analysis");
+        }
+      }
+    } catch (error) {
+      console.error("Analysis error:", error);
+      toast({
+        title: "Something went wrong",
+        description: "Please try again later",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  if (view === "analysis") {
+  if (view === "analysis" && analysisResult) {
     return (
       <>
         <Header />
-        <AnalysisView onBack={() => setView("home")} />
+        <AnalysisView 
+          article={analysisResult.article}
+          initialAnalysis={analysisResult.analysis}
+          onBack={() => {
+            setView("home");
+            setAnalysisResult(null);
+          }} 
+        />
+      </>
+    );
+  }
+
+  if (view === "trends") {
+    return (
+      <>
+        <Header />
+        <PublisherTrends onBack={() => setView("home")} />
       </>
     );
   }
@@ -68,6 +135,17 @@ export default function Index() {
 
           <div className="mt-12 animate-slide-up stagger-1">
             <AnalysisInput onAnalyze={handleAnalyze} isLoading={isLoading} />
+          </div>
+
+          <div className="mt-8 flex justify-center">
+            <Button 
+              variant="outline" 
+              onClick={() => setView("trends")}
+              className="gap-2"
+            >
+              <TrendingUp className="h-4 w-4" />
+              View Publisher Trends
+            </Button>
           </div>
         </section>
 
