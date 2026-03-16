@@ -152,14 +152,14 @@ export function AnalysisInput({ onAnalyze, isLoading = false, className }: Analy
                 className={cn(
                   "inline-flex items-center gap-2 rounded-sm border px-2.5 py-1 text-[11px] uppercase tracking-[0.16em] transition-colors",
                   selectedSources.includes(source.id)
-                    ? "border-primary/70 bg-accent/50 text-primary-foreground"
+                    ? "border-primary bg-primary text-primary-foreground"
                     : "border-border bg-secondary/60 text-muted-foreground hover:border-primary/50"
                 )}
               >
                 <span
                   className={cn(
                     "h-1.5 w-1.5 rounded-full",
-                    selectedSources.includes(source.id) ? "bg-primary" : "bg-muted-foreground/50"
+                    selectedSources.includes(source.id) ? "bg-primary-foreground" : "bg-muted-foreground"
                   )}
                 />
                 {source.label}
@@ -185,14 +185,14 @@ export function AnalysisInput({ onAnalyze, isLoading = false, className }: Analy
                 className={cn(
                   "inline-flex items-center gap-2 rounded-sm border px-2.5 py-1 text-[11px] uppercase tracking-[0.16em] transition-colors",
                   selectedModels.includes(model.id)
-                    ? "border-primary/70 bg-accent/50 text-primary-foreground"
+                    ? "border-primary bg-primary text-primary-foreground"
                     : "border-border bg-secondary/60 text-muted-foreground hover:border-primary/50"
                 )}
               >
                 <span
                   className={cn(
                     "h-1.5 w-1.5 rounded-full",
-                    selectedModels.includes(model.id) ? "bg-primary" : "bg-muted-foreground/50"
+                    selectedModels.includes(model.id) ? "bg-primary-foreground" : "bg-muted-foreground"
                   )}
                 />
                 {model.label}

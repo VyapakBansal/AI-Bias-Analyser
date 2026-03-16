@@ -95,7 +95,7 @@ export function PublisherTrends({ onBack, className }: PublisherTrendsProps) {
                     className={cn(
                       "w-full p-5 rounded-xl border text-left transition-all duration-200 animate-slide-up",
                       selectedPublisher?.id === publisher.id 
-                        ? "border-primary bg-accent" 
+                        ? "border-primary bg-primary/10 text-foreground" 
                         : "border-border bg-card hover:border-primary/30 hover:shadow-sm"
                     )}
                     style={{ animationDelay: `${i * 50}ms` }}

@@ -133,7 +133,7 @@ export default function Index() {
 
       <main className="container px-4 md:px-6">
         {/* Hero / input state */}
-        <section className="py-12 md:py-16 lg:py-20">
+        <section className="py-12 md:py-16 lg:py-20 min-h-[calc(100vh-4rem)] flex items-center">
           <div className="mx-auto flex max-w-5xl flex-col gap-10 lg:flex-row">
             <div className="space-y-4 lg:w-5/12">
               <div className="inline-flex items-center gap-2 rounded-sm border border-border bg-secondary/60 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
@@ -183,50 +183,103 @@ export default function Index() {
           </div>
         </section>
 
-        {/* Features */}
-        <section className="py-16 border-t border-border">
-          <div className="grid md:grid-cols-3 gap-8">
-            {features.map((feature, i) => (
-              <div
-                key={i}
-                className={`text-center md:text-left space-y-3 animate-slide-up stagger-${i + 2}`}
-              >
-                <div className="inline-flex p-2.5 rounded-lg bg-accent">
-                  <feature.icon className="h-5 w-5 text-accent-foreground" />
+        {/* How it works */}
+        <section id="how-it-works" className="py-16 border-t border-border">
+          <div className="grid gap-10 md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+            <div className="space-y-4">
+              <h2 className="text-headline font-serif tracking-[0.05em]">
+                How BiasLens reads an article
+              </h2>
+              <p className="text-body text-muted-foreground leading-relaxed">
+                BiasLens doesn&apos;t hallucinate verdicts. It treats your article like a draft on an editor&apos;s
+                desk: break it into claims, check those claims against external signals, then annotate the framing.
+              </p>
+              <ol className="space-y-3 text-body text-muted-foreground">
+                <li>
+                  <span className="font-semibold text-foreground">1. Ingest.</span>{" "}
+                  You paste a URL or text. We normalise the content, strip boilerplate, and isolate the article body.
+                </li>
+                <li>
+                  <span className="font-semibold text-foreground">2. Cross‑check.</span>{" "}
+                  The core factual claims are compared against fact‑checking outlets and your chosen AI models.
+                  Each model votes on credibility and bias, not just sentiment.
+                </li>
+                <li>
+                  <span className="font-semibold text-foreground">3. Annotate.</span>{" "}
+                  We surface charged language, missing context and sourcing patterns, then collapse that into a
+                  single verdict banner and bias spectrum.
+                </li>
+              </ol>
+              <p className="text-small text-muted-foreground">
+                Under the hood this is a simple pipeline: article in, JSON out. The UI you see is a thin editorial
+                layer on top of that structured analysis.
+              </p>
+            </div>
+
+            <div className="grid gap-6 md:grid-cols-2">
+              {features.map((feature, i) => (
+                <div
+                  key={i}
+                  className={`space-y-2 rounded-xl border border-border bg-card/80 p-4 text-left animate-slide-up stagger-${i + 2}`}
+                >
+                  <div className="inline-flex items-center justify-center rounded-md bg-secondary/70 p-2">
+                    <feature.icon className="h-5 w-5 text-primary" />
+                  </div>
+                  <h3 className="text-title text-foreground">{feature.title}</h3>
+                  <p className="text-caption text-muted-foreground leading-relaxed">
+                    {feature.description}
+                  </p>
                 </div>
-                <h3 className="text-title text-foreground">{feature.title}</h3>
-                <p className="text-caption text-muted-foreground leading-relaxed">
-                  {feature.description}
-                </p>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </section>
 
-        {/* Trust indicators */}
-        <section className="py-16 border-t border-border">
-          <div className="max-w-2xl mx-auto text-center space-y-6">
-            <h2 className="text-headline text-foreground">
-              Built for clarity, not controversy
-            </h2>
-            <p className="text-body text-muted-foreground leading-relaxed">
-              We present facts and perspectives without steering conclusions.
-              When sources conflict, we show both sides. When data is uncertain,
-              we say so.
-            </p>
-            <div className="flex flex-wrap justify-center gap-4 pt-4">
+        {/* About BiasLens */}
+        <section id="about-biaslens" className="py-16 border-t border-border">
+          <div className="max-w-5xl mx-auto space-y-8">
+            <div className="text-center space-y-3">
+              <h2 className="text-headline text-foreground">
+                About BiasLens
+              </h2>
+              <p className="text-body text-muted-foreground leading-relaxed max-w-2xl mx-auto">
+                BiasLens is a personal project built to help people spot when a story is leaning too hard on spin,
+                clickbait or one‑sided sourcing. It isn&apos;t trying to replace your judgement&mdash;just to slow you
+                down before you share the wrong link.
+              </p>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
               {[
-                "Transparent methodology",
-                "No ideological steering",
-                "Source citations",
-                "Explicit uncertainty",
-              ].map((item, i) => (
-                <span
-                  key={i}
-                  className="px-4 py-2 rounded-full bg-muted text-caption text-muted-foreground"
+                {
+                  title: "Built for readers, not feeds",
+                  body: "BiasLens is for people who actually open articles, not just headlines. It surfaces what the piece is doing with language, sourcing and framing so you can decide whether it earns your attention.",
+                },
+                {
+                  title: "No party lines, no presets",
+                  body: "There are no hidden left or right sliders here. The system looks at structure: loaded phrases, missing context, and how often a claim is disputed elsewhere.",
+                },
+                {
+                  title: "Signals, not final answers",
+                  body: "Every verdict comes with uncertainty. When sources or models disagree, BiasLens shows that divergence instead of flattening it into a single score.",
+                },
+                {
+                  title: "A small safeguard",
+                  body: "This project exists so it&apos;s slightly harder to fall for confident‑sounding nonsense online. If it makes you close one tab a day, it&apos;s doing its job.",
+                },
+              ].map((card, i) => (
+                <div
+                  key={card.title}
+                  className="group relative overflow-hidden rounded-xl border border-border bg-card/80 p-5 text-left shadow-[0_0_0_0_rgba(0,0,0,0)] transition-all duration-200 hover:border-primary/70 hover:shadow-[0_0_30px_rgba(34,211,238,0.18)]"
                 >
-                  {item}
-                </span>
+                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none bg-gradient-to-br from-primary/10 via-transparent to-emerald-400/10" />
+                  <div className="relative space-y-2">
+                    <h3 className="text-title text-foreground">{card.title}</h3>
+                    <p className="text-caption text-muted-foreground leading-relaxed">
+                      {card.body}
+                    </p>
+                  </div>
+                </div>
               ))}
             </div>
           </div>
