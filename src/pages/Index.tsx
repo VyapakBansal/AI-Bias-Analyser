@@ -146,20 +146,28 @@ export default function Index() {
                 See through the spin before you hit publish.
               </h1>
               <p className="text-body text-muted-foreground max-w-xl leading-relaxed">
-                BiasLens cross‑checks political stories against established fact‑checkers and multiple AI models,
-                giving you an editorial‑grade read on credibility and framing in seconds.
+                BiasLens cross‑checks political stories against established
+                fact‑checkers and multiple AI models, giving you an
+                editorial‑grade read on credibility and framing in seconds.
               </p>
               <p className="hidden text-small text-muted-foreground/80 md:block">
-                Designed for journalists, researchers and editors who need a second set of eyes, not a replacement.
+                Designed for journalists, researchers and editors who need a
+                second set of eyes, not a replacement.
               </p>
             </div>
 
             <div className="lg:w-7/12">
               <div className="rounded-xl border border-border bg-card/90 p-5 shadow-lg shadow-black/40 animate-slide-up">
-                <AnalysisInput onAnalyze={handleAnalyze} isLoading={isLoading} />
+                <AnalysisInput
+                  onAnalyze={handleAnalyze}
+                  isLoading={isLoading}
+                />
                 <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-[11px] text-muted-foreground">
                   <p>
-                    <span className="font-medium text-primary-foreground">No article is stored</span> — summaries only are cached for trends.
+                    <span className="font-medium text-primary-foreground">
+                      No article is stored
+                    </span>{" "}
+                    — summaries only are cached for trends.
                   </p>
                   <button
                     type="button"
