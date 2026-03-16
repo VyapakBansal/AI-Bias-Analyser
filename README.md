@@ -1,73 +1,78 @@
-# Welcome to your Lovable project
+# AI Article Analyser
 
-## Project info
+Small web app for poking at news articles and seeing how biased or trustworthy they look. Built for ENGG 200, more “working prototype” than polished product.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+---
 
-## How can I edit this code?
+## What you see in the app
 
-There are several ways of editing your application.
+- **Landing view**
+  - Big title and short explanation of what the tool does.
+  - A theme toggle in the header so you can flip between light and dark.
 
-**Use Lovable**
+- **Article input panel**
+  - Text area where you can paste the full article.
+  - Optional URL field so you can try scraping an article from a live site.
+  - Basic metadata fields like title and publisher.
+  - Buttons to either *scrape* from the URL or *analyse* whatever text is in the box.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+- **Analysis results**
+  - **Credibility score card** with a 0–100 score and a few bullet points explaining why it landed there.
+  - **Claims list**: each card shows one factual claim, its status (verified/partial/false/etc.), a short explanation and a confidence rating.
+  - **Bias highlights**: quotes from the article with notes about framing, language, omission and other bias types, plus severity and confidence.
+  - **Arguments summary**: main thesis, supporting points and any opposing points the model picked up.
 
-Changes made via Lovable will be committed automatically to this repo.
+- **Publisher / trend extras**
+  - When there’s enough data, a little publisher trends section gives a rough feel for how this outlet tends to score over time.
 
-**Use your preferred IDE**
+All of this is driven by an AI model behind a Supabase edge function; the UI is just trying to make the JSON output readable for humans.
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+---
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+## How it works (roughly)
 
-Follow these steps:
+1. You paste an article or give a URL.
+2. The backend sends the content to an AI model with a fairly strict “fact‑checker / media analyst” prompt.
+3. The model replies with structured JSON (claims, biases, scores, etc.).
+4. The frontend renders that into cards, charts and lists instead of a giant wall of text.
+
+The logic is deliberately opinionated but not magical: if the input is vague or low quality, the output will be too.
+
+---
+
+## Running it locally
+
+You’ll need a recent version of Node.js and npm.
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
 git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
 cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+npm install
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+Then open the printed URL (usually `http://localhost:5173`) in your browser.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+To get real analyses instead of placeholder errors, you’ll also need:
 
-**Use GitHub Codespaces**
+- A Supabase project (the SQL migrations in `supabase/migrations` set up the basics).
+- An AI API key configured for the `analyze-article` edge function (`AI_API_KEY` env var).
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+---
 
-## What technologies are used for this project?
+## Tech stack (kept simple)
 
-This project is built with:
+- Vite + React + TypeScript
+- shadcn‑ui + Tailwind CSS
+- Supabase (edge functions + database)
+- A single AI model endpoint behind the `analyze-article` function
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+Nothing here is especially clever; the point is clarity over cleverness.
 
-## How can I deploy this project?
+---
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+## Rough edges and caveats
 
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+- It’s a student project, so you’ll find the occasional hard‑coded copy, clunky layout or half‑finished idea.
+- The AI can be wrong or over‑confident; treat the output as a starting point for thinking, not ground truth.
+- If it breaks, it should at least fail loudly enough that you can see where to poke it next.
