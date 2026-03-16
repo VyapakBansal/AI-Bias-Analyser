@@ -12,6 +12,16 @@ interface AnalysisInputProps {
 export function AnalysisInput({ onAnalyze, isLoading = false, className }: AnalysisInputProps) {
   const [inputType, setInputType] = useState<"url" | "text">("url");
   const [input, setInput] = useState("");
+  const [selectedSources, setSelectedSources] = useState<string[]>([
+    "snopes",
+    "politifact",
+    "reuters",
+  ]);
+  const [selectedModels, setSelectedModels] = useState<string[]>([
+    "claude",
+    "gpt4",
+    "gemini",
+  ]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,15 +30,25 @@ export function AnalysisInput({ onAnalyze, isLoading = false, className }: Analy
     }
   };
 
+  const toggleChip = (group: "sources" | "models", value: string) => {
+    const setFn = group === "sources" ? setSelectedSources : setSelectedModels;
+    const current = group === "sources" ? selectedSources : selectedModels;
+    setFn(
+      current.includes(value)
+        ? current.filter((v) => v !== value)
+        : [...current, value]
+    );
+  };
+
   return (
-    <div className={cn("w-full max-w-2xl mx-auto", className)}>
+    <div className={cn("w-full max-w-2xl mx-auto text-left", className)}>
       {/* Input type toggle */}
-      <div className="flex gap-1 p-1 bg-muted rounded-lg w-fit mb-4">
+      <div className="inline-flex gap-1 p-1 bg-secondary rounded-md border border-border max-w-full overflow-x-auto mb-4">
         <button
           type="button"
           onClick={() => setInputType("url")}
           className={cn(
-            "flex items-center gap-2 px-4 py-2 rounded-md text-caption font-medium transition-all duration-150",
+            "flex items-center gap-2 px-3 py-1.5 rounded-sm text-small font-medium tracking-wide transition-all duration-150",
             inputType === "url" 
               ? "bg-background text-foreground shadow-sm" 
               : "text-muted-foreground hover:text-foreground"
@@ -41,7 +61,7 @@ export function AnalysisInput({ onAnalyze, isLoading = false, className }: Analy
           type="button"
           onClick={() => setInputType("text")}
           className={cn(
-            "flex items-center gap-2 px-4 py-2 rounded-md text-caption font-medium transition-all duration-150",
+            "flex items-center gap-2 px-3 py-1.5 rounded-sm text-small font-medium tracking-wide transition-all duration-150",
             inputType === "text" 
               ? "bg-background text-foreground shadow-sm" 
               : "text-muted-foreground hover:text-foreground"
@@ -60,13 +80,13 @@ export function AnalysisInput({ onAnalyze, isLoading = false, className }: Analy
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="https://example.com/article"
-              className="w-full h-14 px-5 pr-32 rounded-xl border border-border bg-background text-body placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all duration-150"
+              className="w-full h-12 px-4 pr-32 rounded-md border border-border bg-secondary/60 text-body placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-150"
               disabled={isLoading}
             />
             <Button 
               type="submit" 
               size="lg"
-              variant="hero"
+              variant="default"
               disabled={!input.trim() || isLoading}
               className="absolute right-2 top-1/2 -translate-y-1/2"
             >
@@ -87,13 +107,13 @@ export function AnalysisInput({ onAnalyze, isLoading = false, className }: Analy
               onChange={(e) => setInput(e.target.value)}
               placeholder="Paste the article text here..."
               rows={6}
-              className="w-full px-5 py-4 rounded-xl border border-border bg-background text-body placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all duration-150 resize-none"
+              className="w-full px-4 py-3 rounded-md border border-border bg-secondary/60 text-body placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-150 resize-none"
               disabled={isLoading}
             />
             <Button 
               type="submit" 
               size="lg"
-              variant="hero"
+              variant="default"
               disabled={!input.trim() || isLoading}
               className="w-full sm:w-auto"
             >
@@ -110,10 +130,82 @@ export function AnalysisInput({ onAnalyze, isLoading = false, className }: Analy
         )}
       </form>
 
-      <p className="mt-3 text-small text-muted-foreground">
-        Supported: News articles, opinion pieces, research publications. 
-        <span className="text-muted-foreground/70"> Personal social media posts are not supported.</span>
-      </p>
+      {/* Source & model chips */}
+      <div className="mt-6 space-y-4">
+        <div>
+          <p className="text-[11px] uppercase tracking-[0.24em] text-muted-foreground mb-1.5">
+            Fact-check sources
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {[
+              { id: "snopes", label: "Snopes" },
+              { id: "politifact", label: "PolitiFact" },
+              { id: "reuters", label: "Reuters Fact Check" },
+              { id: "factcheck", label: "FactCheck.org" },
+              { id: "ap", label: "AP Fact Check" },
+              { id: "mbfc", label: "Media Bias / Fact Check" },
+            ].map((source) => (
+              <button
+                key={source.id}
+                type="button"
+                onClick={() => toggleChip("sources", source.id)}
+                className={cn(
+                  "inline-flex items-center gap-2 rounded-sm border px-2.5 py-1 text-[11px] uppercase tracking-[0.16em] transition-colors",
+                  selectedSources.includes(source.id)
+                    ? "border-primary/70 bg-accent/50 text-primary-foreground"
+                    : "border-border bg-secondary/60 text-muted-foreground hover:border-primary/50"
+                )}
+              >
+                <span
+                  className={cn(
+                    "h-1.5 w-1.5 rounded-full",
+                    selectedSources.includes(source.id) ? "bg-primary" : "bg-muted-foreground/50"
+                  )}
+                />
+                {source.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <p className="text-[11px] uppercase tracking-[0.24em] text-muted-foreground mb-1.5">
+            AI models
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {[
+              { id: "claude", label: "Claude" },
+              { id: "gpt4", label: "GPT‑4o" },
+              { id: "gemini", label: "Gemini" },
+            ].map((model) => (
+              <button
+                key={model.id}
+                type="button"
+                onClick={() => toggleChip("models", model.id)}
+                className={cn(
+                  "inline-flex items-center gap-2 rounded-sm border px-2.5 py-1 text-[11px] uppercase tracking-[0.16em] transition-colors",
+                  selectedModels.includes(model.id)
+                    ? "border-primary/70 bg-accent/50 text-primary-foreground"
+                    : "border-border bg-secondary/60 text-muted-foreground hover:border-primary/50"
+                )}
+              >
+                <span
+                  className={cn(
+                    "h-1.5 w-1.5 rounded-full",
+                    selectedModels.includes(model.id) ? "bg-primary" : "bg-muted-foreground/50"
+                  )}
+                />
+                {model.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <p className="mt-1 text-small text-muted-foreground">
+          <span className="font-medium text-primary-foreground">BiasLens</span> queries multiple sources and models in parallel.
+          More signals mean stronger verdicts, but also slower runs.
+        </p>
+      </div>
     </div>
   );
 }

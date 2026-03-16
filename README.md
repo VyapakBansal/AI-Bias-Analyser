@@ -1,6 +1,6 @@
-# AI Article Analyser
+# AI Article Analyser (BiasLens)
 
-Small web app for poking at news articles and seeing how biased or trustworthy they look. Built for ENGG 200, more “working prototype” than polished product.
+Small web app for poking at news articles and seeing how biased or trustworthy they look. Built by **Vyapak Bansal**.
 
 ---
 
@@ -14,7 +14,7 @@ Small web app for poking at news articles and seeing how biased or trustworthy t
   - Text area where you can paste the full article.
   - Optional URL field so you can try scraping an article from a live site.
   - Basic metadata fields like title and publisher.
-  - Buttons to either *scrape* from the URL or *analyse* whatever text is in the box.
+  - Buttons to either _scrape_ from the URL or _analyse_ whatever text is in the box.
 
 - **Analysis results**
   - **Credibility score card** with a 0–100 score and a few bullet points explaining why it landed there.
